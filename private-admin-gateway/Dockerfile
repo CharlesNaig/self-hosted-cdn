@@ -2,7 +2,9 @@ FROM node:20-alpine AS client-build
 
 WORKDIR /build/client
 COPY client/package*.json ./
-RUN npm ci
+# Vite is a build-time devDependency.  Explicitly include dev dependencies so
+# a production-oriented npm configuration cannot omit the compiler.
+RUN npm ci --include=dev
 COPY client/ ./
 RUN npm run build
 
