@@ -81,9 +81,11 @@ services:
       start_period: 10s
 
 networks:
-  private:
-    internal: true
   gateway:
+    driver: bridge
+
+  private:
+    driver: bridge
     internal: true
 
 volumes:
