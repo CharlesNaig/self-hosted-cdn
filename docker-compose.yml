@@ -1,0 +1,72 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    networks:
+      - private
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  app:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      PORT: 3000
+      MONGO_URI: ${MONGO_URI:?Set MONGO_URI in .env to mongodb://mongo:27017/selfhostedcdn}
+      STORAGE_PATH: /app/data/files
+      TEMP_STORAGE_PATH: /app/data/tmp
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - private
+      - gateway
+    volumes:
+      - cdn-files:/app/data
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  public-gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:8080"
+    networks:
+      - gateway
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S -O /dev/null http://127.0.0.1:8080/cdn/not-found 2>&1 | grep -q '404'"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  private:
+    internal: true
+  gateway:
+    internal: true
+
+volumes:
+  mongo-data:
+  cdn-files:

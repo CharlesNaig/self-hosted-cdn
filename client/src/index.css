@@ -1,0 +1,51 @@
+/* client/src/index.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Roboto Mono', 'Consolas', monospace;
+  background: #0a0a0a;
+  background-image: 
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(50, 50, 50, 0.1) 2px, rgba(50, 50, 50, 0.1) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(50, 50, 50, 0.1) 2px, rgba(50, 50, 50, 0.1) 4px),
+    radial-gradient(ellipse at center, rgba(60, 60, 60, 0.05) 0%, transparent 70%);
+  background-size: 100% 100%, 100% 100%, 100% 100%;
+  background-attachment: fixed;
+  color: #e0e0e0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(135deg, rgba(80, 80, 80, 0.03) 0%, transparent 50%),
+    linear-gradient(225deg, rgba(60, 60, 60, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: scan 8s linear infinite;
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
