@@ -29,11 +29,20 @@ export async function uploadFile(file, apiKey) {
 /**
  * Fetch list of files
  */
-export async function fetchFiles(page = 1, limit = 50) {
-  const response = await fetch(`/api/files?page=${page}&limit=${limit}`);
+export async function fetchFiles(page = 1, limit = 50, apiKey = '') {
+  const headers = {};
+
+  if (apiKey) {
+    headers['x-api-key'] = apiKey;
+  }
+
+  const response = await fetch(`/api/files?page=${page}&limit=${limit}`, {
+    headers,
+  });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch files');
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch files');
   }
 
   return response.json();

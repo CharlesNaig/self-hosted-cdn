@@ -11,14 +11,14 @@ function FileList({ apiKey, refresh }) {
 
   useEffect(() => {
     loadFiles();
-  }, [page, refresh]);
+  }, [page, refresh, apiKey]);
 
   const loadFiles = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const data = await fetchFiles(page, 50);
+      const data = await fetchFiles(page, 50, apiKey);
       setFiles(data.files);
       setTotalPages(data.pages);
     } catch (err) {
