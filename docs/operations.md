@@ -27,7 +27,9 @@ The raw API key is accepted only in the `x-api-key` header and is never bundled 
 
 ## Routes
 
-Private application (`127.0.0.1:3000`): `/api/upload`, `/api/files`, `/api/files/:id`, `/api/ping`, `/health/live`, `/health/ready`, and `/cdn/:identifier`.
+Private Express application (`127.0.0.1:3000`): `/api/upload`, `/api/files`, `/api/files/:id`, `/api/ping`, `/health/live`, `/health/ready`, and `/cdn/:identifier`.
+
+Private admin gateway (`127.0.0.1:3002`): serves the compiled Vite dashboard with SPA fallback and proxies `/api/*`, `/health/*`, and `/cdn/*` to the Express application. The dashboard uses same-origin `/api/*` requests, so Tailnet browsers never need access to the host's loopback address.
 
 Future public gateway (`127.0.0.1:3001`): only `GET` and `HEAD` below `/cdn/`. It rejects `/api/*`, other paths, and every write method.
 
@@ -46,6 +48,8 @@ docker compose up -d
 docker compose ps
 Invoke-WebRequest http://127.0.0.1:3000/health/live
 Invoke-WebRequest http://127.0.0.1:3000/health/ready
+Invoke-WebRequest http://127.0.0.1:3002/
+Invoke-WebRequest http://127.0.0.1:3002/health/live
 Invoke-WebRequest http://127.0.0.1:3001/api/files # must return 404
 docker compose logs --tail=100 app public-gateway mongo
 docker compose down

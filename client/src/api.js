@@ -1,7 +1,5 @@
 // client/src/api.js
 
-const API_URL = import.meta.env.VITE_API_URL || '';
-
 /**
  * Upload a file to the CDN
  */
@@ -14,7 +12,7 @@ export async function uploadFile(file, apiKey) {
     headers['x-api-key'] = apiKey;
   }
 
-  const response = await fetch(`${API_URL}/api/upload`, {
+  const response = await fetch('/api/upload', {
     method: 'POST',
     headers,
     body: formData,
@@ -32,9 +30,7 @@ export async function uploadFile(file, apiKey) {
  * Fetch list of files
  */
 export async function fetchFiles(page = 1, limit = 50) {
-  const response = await fetch(
-    `${API_URL}/api/files?page=${page}&limit=${limit}`
-  );
+  const response = await fetch(`/api/files?page=${page}&limit=${limit}`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch files');
@@ -47,7 +43,7 @@ export async function fetchFiles(page = 1, limit = 50) {
  * Delete a file by ID
  */
 export async function deleteFile(id, apiKey) {
-  const response = await fetch(`${API_URL}/api/files/${id}`, {
+  const response = await fetch(`/api/files/${id}`, {
     method: 'DELETE',
     headers: {
       'x-api-key': apiKey,
@@ -67,5 +63,5 @@ export async function deleteFile(id, apiKey) {
  */
 export function getCdnUrl(url) {
   if (url.startsWith('http')) return url;
-  return `${API_URL}${url}`;
+  return url;
 }
