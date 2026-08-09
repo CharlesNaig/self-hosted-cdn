@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/:path*",
-      "destination": "https://charles-thinkpad-x250.tail360c4e.ts.net/cdn/:path*"
+      "destination": "https://origin.example/cdn/:path*"
     }
   ],
   "headers": [

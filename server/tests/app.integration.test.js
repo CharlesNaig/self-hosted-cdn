@@ -49,6 +49,12 @@ test('admin routes reject absent and incorrect keys', async () => {
   await request(app).get('/api/files').set('x-api-key', 'wrong').expect(403);
   await request(app).post('/api/upload').attach('file', png, { filename: 'image.png', contentType: 'image/png' }).expect(401);
 });
+test('unauthenticated attempts do not consume the administrator upload budget', async () => {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await request(app).post('/api/upload').expect(401);
+  }
+  await upload().then((response) => assert.equal(response.status, 201));
+});
 test('uploads are content addressed, deduplicated, and delivered through /cdn', async () => {
   const first = await upload(); assert.equal(first.status, 201); assert.equal(first.body.storedName, `${first.body.sha256}.png`);
   const second = await upload(); assert.equal(second.status, 200); assert.equal(second.body.duplicate, true); assert.equal(database.files.length, 1);
@@ -78,6 +84,15 @@ test('rejects mismatched type, traversal, and oversized files without retaining 
   await request(app).post('/api/upload').set('x-api-key', config.adminApiKey).attach('file', Buffer.alloc(512), { filename: 'image.png', contentType: 'image/png' }).expect(413);
   await request(app).post('/api/upload').set('x-api-key', config.adminApiKey).attach('file', Buffer.from('unsupported'), { filename: 'program.exe', contentType: 'application/octet-stream' }).expect(415);
   for (const candidate of ['../x.png', '..%2Fx.png', '%2e%2e%2fx.png', 'C:%5Cx.png', 'a.png%00']) await request(app).get(`/cdn/${candidate}`).expect(404);
+  assert.deepEqual(await fs.readdir(config.tempStoragePath), []);
+});
+test('rejects unexpected multipart fields before finalizing an upload', async () => {
+  await request(app)
+    .post('/api/upload')
+    .set('x-api-key', config.adminApiKey)
+    .field('note', 'not accepted')
+    .attach('file', png, { filename: 'image.png', contentType: 'image/png' })
+    .expect(400);
   assert.deepEqual(await fs.readdir(config.tempStoragePath), []);
 });
 test('only authorized deletion removes the physical content', async () => {

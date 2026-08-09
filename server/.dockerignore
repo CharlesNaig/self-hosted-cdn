@@ -1,0 +1,11 @@
+.env
+.env.*
+node_modules
+tests
+storage
+tmp
+*.rar
+*.7z
+*.bak
+*.backup
+npm-debug.log*

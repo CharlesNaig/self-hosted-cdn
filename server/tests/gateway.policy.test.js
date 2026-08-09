@@ -7,6 +7,11 @@ test('nginx public gateway policy permits only CDN GET/HEAD proxying', async () 
   assert.match(config, /location \/cdn\//);
   assert.match(config, /limit_except GET HEAD \{ deny all; \}/);
   assert.match(config, /proxy_pass http:\/\/app:3000/);
+  assert.match(config, /limit_req_zone \$binary_remote_addr zone=cdn_per_ip:10m rate=20r\/s/);
+  assert.match(config, /limit_conn_zone \$binary_remote_addr zone=cdn_connections:10m/);
+  assert.match(config, /limit_req zone=cdn_per_ip burst=40 nodelay/);
+  assert.match(config, /limit_conn cdn_connections 8/);
+  assert.match(config, /proxy_connect_timeout 5s/);
   assert.match(config, /location \/ \{\s*return 404;/);
 });
 

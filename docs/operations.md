@@ -1,6 +1,6 @@
 # Private-first operations
 
-This repository intentionally does not configure Vercel, Tailscale Serve, Tailscale Funnel, DNS, or a public hostname.
+This public repository contains only a non-deployable Vercel rewrite example. Live Vercel, Tailscale Serve/Funnel, DNS, origin hostnames, credentials, and runtime storage must be maintained in a private deployment repository or local secret store.
 
 ## Local configuration
 
@@ -27,6 +27,8 @@ NGINX_CLIENT_MAX_BODY_SIZE=1g
 
 The raw API key is accepted only in the `x-api-key` header and is never bundled into Vite output. The UI keeps it in memory instead of `localStorage`. A future server-side session/Tailscale identity integration should replace the shared key; identity headers must remain untrusted until a verified localhost-only Tailscale Serve boundary exists.
 
+Backup archives are intentionally excluded from Git and Docker build contexts. Never package `.env`, database connection strings, uploaded objects, context notes, or private origin configuration inside the application repository.
+
 `MAX_UPLOAD_SIZE_MB` is enforced by Express/Multer with disk-backed temporary uploads. `NGINX_CLIENT_MAX_BODY_SIZE` is the private gateway’s outer limit and should be at least as large as `MAX_UPLOAD_SIZE_MB`; its 413 responses are JSON so the dashboard can display a clear message. `PUBLIC_CDN_BASE_URL` is optional and is injected when the private gateway image is built. Set it only to the eventual public CDN origin (for example, `https://cdn.naig.me`); previews, VIEW, and COPY URL then use `${PUBLIC_CDN_BASE_URL}/${storedName}` without a `/cdn/` segment.
 
 ## Supported file formats and delivery policy
@@ -44,6 +46,20 @@ Private Express application (`127.0.0.1:3000`): `/api/upload`, `/api/files`, `/a
 Private admin gateway (`127.0.0.1:3002`): serves the compiled Vite dashboard with SPA fallback and proxies `/api/*`, `/health/*`, and `/cdn/*` to the Express application. The dashboard uses same-origin `/api/*` requests, so Tailnet browsers never need access to the host's loopback address.
 
 Future public gateway (`127.0.0.1:3001`): only `GET` and `HEAD` below `/cdn/`. It rejects `/api/*`, other paths, and every write method.
+
+The gateway also applies per-source request and connection limits plus bounded proxy timeouts. These controls reduce accidental and abusive load; they do not replace host monitoring, bandwidth alerts, or an authenticated edge-to-origin boundary.
+
+## Public edge deployment
+
+`vercel-proxy/vercel.example.json` is documentation, not live configuration. Copy it into a private deployment repository, replace `origin.example` there, and keep the live file outside this public Git history.
+
+Before enabling an edge or tunnel:
+
+1. Confirm the tunnel targets only `127.0.0.1:3001`.
+2. Confirm `/api/*`, `/health/*`, port 3000, and port 3002 are not publicly reachable.
+3. Prefer an authenticated origin so direct requests cannot bypass the edge.
+4. Run the repository-hygiene and gateway policy tests.
+5. Monitor cache misses, 429 responses, concurrent connections, and host bandwidth.
 
 ## Storage and recovery
 
