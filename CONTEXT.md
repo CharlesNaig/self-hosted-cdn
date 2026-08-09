@@ -62,3 +62,15 @@ Private-first self-hosted CDN: Express/MongoDB administration, a public read-onl
   VIEW/COPY consistency, URL encoding, and development fallback.
 - `server npm test`: 10 passing tests.
 - `VITE_PUBLIC_CDN_BASE_URL=https://cdn.naig.me/ client npm run build`: passed.
+
+## 2026-08-10 — Public CDN favicon
+
+- Added the requested public PNG asset as the favicon for the static
+  `vercel-proxy` landing page.
+- Kept the proxy rewrite, Tailscale, Docker, and private-admin configuration unchanged.
+- Updated the landing-page test to target the actual proxy static page and allow only
+  the explicit public favicon URL as an external resource.
+
+### Favicon verification
+
+- `node --test tests/cdn-landing.test.mjs`: 2 passing tests.

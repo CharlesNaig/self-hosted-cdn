@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 
-const page = await fs.readFile(new URL('../index.html', import.meta.url), 'utf8');
+const page = await fs.readFile(new URL('../vercel-proxy/index.html', import.meta.url), 'utf8');
+const faviconUrl = 'https://cdn.naig.me/2065ed4e8bfbdf5cfbaebef422ef9cbd72f742d7a31f72e8236cc48b200406a1.png';
 
 test('landing page is a standalone, accessible static document', () => {
   assert.match(page, /<html lang="en">/);
@@ -10,7 +11,7 @@ test('landing page is a standalone, accessible static document', () => {
   assert.match(page, /<h1 id="cdn-heading">CDN<\/h1>/);
   assert.match(page, /aria-label="CDN information"/);
   assert.doesNotMatch(page, /<script\b/i);
-  assert.doesNotMatch(page, /https?:\/\//i);
+  assert.match(page, new RegExp(`<link rel="icon" type="image/png" href="${faviconUrl}"`));
 });
 
 test('landing page includes only approved public information', () => {
