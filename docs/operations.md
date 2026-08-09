@@ -27,7 +27,7 @@ NGINX_CLIENT_MAX_BODY_SIZE=1g
 
 The raw API key is accepted only in the `x-api-key` header and is never bundled into Vite output. The UI keeps it in memory instead of `localStorage`. A future server-side session/Tailscale identity integration should replace the shared key; identity headers must remain untrusted until a verified localhost-only Tailscale Serve boundary exists.
 
-`MAX_UPLOAD_SIZE_MB` is enforced by Express/Multer with disk-backed temporary uploads. `NGINX_CLIENT_MAX_BODY_SIZE` is the private gateway’s outer limit and should be at least as large as `MAX_UPLOAD_SIZE_MB`; its 413 responses are JSON so the dashboard can display a clear message. `PUBLIC_CDN_BASE_URL` is optional and is injected when the private gateway image is built. Set it only to the eventual public CDN origin (without a trailing slash) if copied and preview URLs should use that origin.
+`MAX_UPLOAD_SIZE_MB` is enforced by Express/Multer with disk-backed temporary uploads. `NGINX_CLIENT_MAX_BODY_SIZE` is the private gateway’s outer limit and should be at least as large as `MAX_UPLOAD_SIZE_MB`; its 413 responses are JSON so the dashboard can display a clear message. `PUBLIC_CDN_BASE_URL` is optional and is injected when the private gateway image is built. Set it only to the eventual public CDN origin (for example, `https://cdn.naig.me`); previews, VIEW, and COPY URL then use `${PUBLIC_CDN_BASE_URL}/${storedName}` without a `/cdn/` segment.
 
 ## Supported file formats and delivery policy
 

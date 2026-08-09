@@ -1,4 +1,23 @@
-const publicCdnBaseUrl = (import.meta.env?.VITE_PUBLIC_CDN_BASE_URL || '').replace(/\/+$/, '');
+const publicCdnBaseUrl = normalizePublicCdnBaseUrl(import.meta.env?.VITE_PUBLIC_CDN_BASE_URL);
+
+export function normalizePublicCdnBaseUrl(baseUrl) {
+  return typeof baseUrl === 'string' ? baseUrl.trim().replace(/\/+$/, '') : '';
+}
+
+export function buildPublicCdnUrl(storedName, baseUrl = publicCdnBaseUrl) {
+  if (typeof storedName !== 'string' || !storedName.trim()) return null;
+
+  const identifier = encodeURIComponent(storedName.trim());
+  const normalizedBaseUrl = normalizePublicCdnBaseUrl(baseUrl);
+
+  // During local development, keep using the private same-origin CDN route.
+  // Production builds provide VITE_PUBLIC_CDN_BASE_URL and omit this prefix.
+  return normalizedBaseUrl ? `${normalizedBaseUrl}/${identifier}` : `/cdn/${identifier}`;
+}
+
+export function getPublicAssetUrl(file, baseUrl = publicCdnBaseUrl) {
+  return buildPublicCdnUrl(file?.storedName, baseUrl);
+}
 
 export async function responseError(response, fallback) {
   const contentType = response.headers.get('content-type') || '';
@@ -31,9 +50,4 @@ export async function fetchFiles(page = 1, limit = 50, apiKey = '') {
 
 export async function deleteFile(id, apiKey) {
   return requireJson(await fetch(`/api/files/${id}`, { method: 'DELETE', headers: apiKey ? { 'x-api-key': apiKey } : {} }), 'Delete failed');
-}
-
-export function getCdnUrl(url) {
-  if (/^https?:\/\//i.test(url)) return url;
-  return publicCdnBaseUrl ? `${publicCdnBaseUrl}${url}` : url;
 }

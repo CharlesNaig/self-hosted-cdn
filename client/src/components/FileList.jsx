@@ -1,6 +1,6 @@
 // client/src/components/FileList.jsx
 import React, { useState, useEffect } from 'react';
-import { fetchFiles, deleteFile, getCdnUrl } from '../api';
+import { fetchFiles, deleteFile, getPublicAssetUrl } from '../api';
 
 function FileList({ apiKey, refresh }) {
   const [files, setFiles] = useState([]);
@@ -46,13 +46,14 @@ function FileList({ apiKey, refresh }) {
     }
   };
 
-  const copyToClipboard = (text) => {
-    // Get the full URL including the website domain
-    const fullUrl = text.startsWith('http') ? text : `${window.location.origin}${text}`;
-    
-    navigator.clipboard.writeText(fullUrl).then(() => {
+  const copyToClipboard = (publicUrl, button) => {
+    if (!publicUrl) {
+      alert('This file does not have a public CDN identifier');
+      return;
+    }
+
+    navigator.clipboard.writeText(publicUrl).then(() => {
       // Show a temporary success message
-      const button = event.target.closest('button');
       const originalHTML = button.innerHTML;
       button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: inline-block; vertical-align: middle; margin-right: 6px;"><path d="M5 13L9 17L19 7" stroke="#70d070" stroke-width="3" stroke-linecap="square"/></svg>Copied!`;
       button.style.background = 'linear-gradient(180deg, #2a3a2a 0%, #1f2f1f 100%)';
@@ -80,11 +81,14 @@ function FileList({ apiKey, refresh }) {
       ) : (
         <>
           <div className="files-grid">
-            {files.map((file) => (
+            {files.map((file) => {
+              const publicUrl = getPublicAssetUrl(file);
+
+              return (
               <div key={file._id} className="file-card">
                 {file.mime.startsWith('image/') && (
                   <img
-                    src={getCdnUrl(file.url)}
+                    src={publicUrl || file.url}
                     alt={file.originalName}
                     className="file-preview"
                   />
@@ -102,7 +106,8 @@ function FileList({ apiKey, refresh }) {
                   <div className="file-actions">
                     <button
                       className="btn-copy"
-                      onClick={() => copyToClipboard(getCdnUrl(file.url))}
+                      onClick={(event) => copyToClipboard(publicUrl, event.currentTarget)}
+                      disabled={!publicUrl}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{display: 'inline-block', verticalAlign: 'middle', marginRight: '6px'}}>
                         <rect x="8" y="8" width="12" height="14" stroke="currentColor" strokeWidth="2" fill="none"/>
@@ -111,10 +116,14 @@ function FileList({ apiKey, refresh }) {
                       Copy URL
                     </button>
                     <a
-                      href={getCdnUrl(file.url)}
+                      href={publicUrl || undefined}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn-view"
+                      aria-disabled={!publicUrl}
+                      onClick={(event) => {
+                        if (!publicUrl) event.preventDefault();
+                      }}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{display: 'inline-block', verticalAlign: 'middle', marginRight: '6px'}}>
                         <circle cx="12" cy="12" r="3" fill="currentColor"/>
@@ -139,7 +148,8 @@ function FileList({ apiKey, refresh }) {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {totalPages > 1 && (

@@ -43,3 +43,22 @@ Private-first self-hosted CDN: Express/MongoDB administration, a public read-onl
 - `server npm test`: 10 passing tests.
 - `client npm test`: 3 passing tests.
 - `client npm run build`: passed.
+
+## 2026-08-10 — Public asset URLs in the private dashboard
+
+- Centralized public-asset URL construction in `client/src/api.js`. It uses the
+  authoritative content-addressed `storedName`, safely URL-encodes it, and removes
+  trailing slashes from `VITE_PUBLIC_CDN_BASE_URL`.
+- With `PUBLIC_CDN_BASE_URL=https://cdn.naig.me`, previews, VIEW, and COPY URL use
+  `https://cdn.naig.me/<storedName>`; they no longer use the private admin origin or
+  include `/cdn/` after the public base.
+- API requests and file-management operations remain private same-origin `/api/*`
+  requests. No Tailscale, Funnel, Serve, nginx, MongoDB, Docker, or Vercel routing
+  configuration was changed.
+
+### Public URL verification
+
+- `client npm test`: 5 passing tests, including configured base, normalization,
+  VIEW/COPY consistency, URL encoding, and development fallback.
+- `server npm test`: 10 passing tests.
+- `VITE_PUBLIC_CDN_BASE_URL=https://cdn.naig.me/ client npm run build`: passed.
