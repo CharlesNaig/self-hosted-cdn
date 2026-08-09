@@ -4,6 +4,7 @@ import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import fs from 'fs/promises';
 import path from 'path';
+import { normalizeMime } from '../config.js';
 import { createApiKeyAuth } from '../middleware/apiKeyAuth.js';
 import { detectMime, hashFile, moveIntoStorage, objectName, objectPath, removeIfExists, validateUpload } from '../utils/storage.js';
 
@@ -30,8 +31,9 @@ export function createUploadRouter({ config, File }) {
     let createdPhysicalObject = false;
     let sha256;
     try {
-      const detectedMime = await detectMime(temporaryPath);
-      const extension = validateUpload(req.file, detectedMime, config);
+      const normalizedMime = normalizeMime(req.file.mimetype);
+      const detectedMime = await detectMime(temporaryPath, normalizedMime);
+      const extension = validateUpload({ ...req.file, mimetype: normalizedMime }, detectedMime, config);
       sha256 = await hashFile(temporaryPath);
       const existing = await File.findOne({ sha256 });
       if (existing) {

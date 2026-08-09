@@ -4,7 +4,7 @@ This repository intentionally does not configure Vercel, Tailscale Serve, Tailsc
 
 ## Local configuration
 
-Copy `.env.example` to `.env`, then populate every variable. Keep the key in a password manager and generate it with a cryptographically secure password generator. The initial safe upload allowlist is PNG, JPEG, WebP, GIF, and AVIF. SVG is disabled by default because it can contain active content; if explicitly enabled, delivery forces it to download.
+Copy `.env.example` to `.env`, then populate every variable. Keep the key in a password manager and generate it with a cryptographically secure password generator. SVG is allowed only when included in the explicit allowlist and is always forced to download because it can contain active content.
 
 ```dotenv
 NODE_ENV=production
@@ -13,17 +13,29 @@ MONGO_URI=mongodb://mongo:27017/selfhostedcdn
 ADMIN_API_KEY=<a long random secret>
 STORAGE_PATH=/app/data/files
 TEMP_STORAGE_PATH=/app/data/tmp
-MAX_UPLOAD_SIZE_MB=25
-STORAGE_QUOTA_MB=10240
+MAX_UPLOAD_SIZE_MB=1024
+STORAGE_QUOTA_MB=102400
 MIN_FREE_DISK_MB=1024
-ALLOWED_MIME_TYPES=image/png,image/jpeg,image/webp,image/gif,image/avif
-ALLOWED_EXTENSIONS=png,jpg,webp,gif,avif
+ALLOWED_MIME_TYPES=image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,application/pdf,text/plain,text/markdown,text/csv,application/json,application/xml,text/xml,application/zip,application/x-7z-compressed,application/vnd.rar,application/x-tar,application/gzip,audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/flac,video/mp4,video/webm,video/quicktime,video/x-matroska,font/woff,font/woff2,font/ttf,font/otf
+ALLOWED_EXTENSIONS=png,jpg,jpeg,webp,gif,avif,svg,pdf,txt,md,csv,json,xml,zip,7z,rar,tar,gz,mp3,wav,ogg,m4a,flac,mp4,webm,mov,mkv,woff,woff2,ttf,otf
 CORS_ORIGIN=http://localhost:5173
 LOG_LEVEL=info
 TRUST_TAILSCALE_IDENTITY=false
+PUBLIC_CDN_BASE_URL=
+NGINX_CLIENT_MAX_BODY_SIZE=1g
 ```
 
 The raw API key is accepted only in the `x-api-key` header and is never bundled into Vite output. The UI keeps it in memory instead of `localStorage`. A future server-side session/Tailscale identity integration should replace the shared key; identity headers must remain untrusted until a verified localhost-only Tailscale Serve boundary exists.
+
+`MAX_UPLOAD_SIZE_MB` is enforced by Express/Multer with disk-backed temporary uploads. `NGINX_CLIENT_MAX_BODY_SIZE` is the private gateway’s outer limit and should be at least as large as `MAX_UPLOAD_SIZE_MB`; its 413 responses are JSON so the dashboard can display a clear message. `PUBLIC_CDN_BASE_URL` is optional and is injected when the private gateway image is built. Set it only to the eventual public CDN origin (without a trailing slash) if copied and preview URLs should use that origin.
+
+## Supported file formats and delivery policy
+
+The supported matrix is PNG/JPEG (`.jpg` and `.jpeg`)/WebP/GIF/AVIF/SVG; PDF, TXT, Markdown, CSV, JSON, XML; ZIP, 7z, RAR, TAR, GZ; MP3, WAV, OGG, M4A, FLAC; MP4, WebM, MOV, MKV; and WOFF/WOFF2/TTF/OTF.
+
+Binary formats are signature-checked where practical. Plain-text formats are validated as text, JSON is parsed, XML/SVG must have matching markup, and WebM/MKV are distinguished by their configured MIME plus EBML container signature. Archives are stored and served as opaque objects—they are not extracted or malware-scanned.
+
+PNG/JPEG/WebP/GIF/AVIF/PDF/audio/video/fonts may be served inline. SVG, Markdown, CSV, JSON, XML, and archives are always sent with `Content-Disposition: attachment`; all objects retain `X-Content-Type-Options: nosniff`, immutable caching, ETags, and the persisted MIME type.
 
 ## Routes
 

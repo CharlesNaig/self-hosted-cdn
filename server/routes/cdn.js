@@ -1,7 +1,7 @@
 import express from 'express';
 import fs from 'fs/promises';
 import { createReadStream } from 'fs';
-import { isObjectName, objectPath } from '../utils/storage.js';
+import { isObjectName, objectPath, requiresAttachment } from '../utils/storage.js';
 
 export function createCdnRouter({ config, File }) {
   const router = express.Router();
@@ -16,7 +16,7 @@ export function createCdnRouter({ config, File }) {
       const stat = await fs.stat(filePath);
       const etag = `"${file.sha256}"`;
       res.set({ 'Cache-Control': 'public, max-age=31536000, immutable', 'X-Content-Type-Options': 'nosniff', 'Content-Type': file.mime, 'Content-Length': String(stat.size), 'Last-Modified': stat.mtime.toUTCString(), ETag: etag });
-      if (file.mime === 'image/svg+xml') res.set('Content-Disposition', `attachment; filename="${identifier}"`);
+      if (requiresAttachment(file.mime)) res.set('Content-Disposition', `attachment; filename="${identifier}"`);
       if (req.fresh) return res.status(304).end();
       if (req.method === 'HEAD') return res.status(200).end();
       return createReadStream(filePath).on('error', next).pipe(res);

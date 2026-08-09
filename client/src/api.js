@@ -1,76 +1,39 @@
-// client/src/api.js
+const publicCdnBaseUrl = (import.meta.env?.VITE_PUBLIC_CDN_BASE_URL || '').replace(/\/+$/, '');
 
-/**
- * Upload a file to the CDN
- */
+export async function responseError(response, fallback) {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      const body = await response.json();
+      if (body?.error || body?.message) return body.error || body.message;
+    } catch { /* Fall back to an HTTP-safe message. */ }
+  } else {
+    const text = (await response.text().catch(() => '')).trim();
+    if (text && !/^<!doctype|^<html/i.test(text)) return `HTTP ${response.status}: ${text.slice(0, 240)}`;
+  }
+  return `${fallback} (HTTP ${response.status})`;
+}
+
+async function requireJson(response, fallback) {
+  if (!response.ok) throw new Error(await responseError(response, fallback));
+  try { return await response.json(); } catch { throw new Error(`${fallback}: server returned an invalid response`); }
+}
+
 export async function uploadFile(file, apiKey) {
   const formData = new FormData();
   formData.append('file', file);
-
-  const headers = {};
-  if (apiKey) {
-    headers['x-api-key'] = apiKey;
-  }
-
-  const response = await fetch('/api/upload', {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Upload failed');
-  }
-
-  return response.json();
+  return requireJson(await fetch('/api/upload', { method: 'POST', headers: apiKey ? { 'x-api-key': apiKey } : {}, body: formData }), 'Upload failed');
 }
 
-/**
- * Fetch list of files
- */
 export async function fetchFiles(page = 1, limit = 50, apiKey = '') {
-  const headers = {};
-
-  if (apiKey) {
-    headers['x-api-key'] = apiKey;
-  }
-
-  const response = await fetch(`/api/files?page=${page}&limit=${limit}`, {
-    headers,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.error || 'Failed to fetch files');
-  }
-
-  return response.json();
+  return requireJson(await fetch(`/api/files?page=${page}&limit=${limit}`, { headers: apiKey ? { 'x-api-key': apiKey } : {} }), 'Failed to fetch files');
 }
 
-/**
- * Delete a file by ID
- */
 export async function deleteFile(id, apiKey) {
-  const response = await fetch(`/api/files/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'x-api-key': apiKey,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Delete failed');
-  }
-
-  return response.json();
+  return requireJson(await fetch(`/api/files/${id}`, { method: 'DELETE', headers: apiKey ? { 'x-api-key': apiKey } : {} }), 'Delete failed');
 }
 
-/**
- * Get full CDN URL for a file
- */
 export function getCdnUrl(url) {
-  if (url.startsWith('http')) return url;
-  return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  return publicCdnBaseUrl ? `${publicCdnBaseUrl}${url}` : url;
 }

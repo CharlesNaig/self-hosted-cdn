@@ -27,13 +27,14 @@ let root; let config; let database; let app;
 const png = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), 'cdn-test-'));
-  config = { nodeEnv: 'test', port: 0, mongoUri: 'mongodb://test', adminApiKey: 'test-admin-key', storagePath: path.join(root, 'files'), tempStoragePath: path.join(root, 'tmp'), maxUploadSize: 32, storageQuotaBytes: 4096, minFreeDiskBytes: 1, allowedMimeTypes: new Set(['image/png']), allowedExtensions: new Set(['png']), corsOrigin: 'http://localhost:5173', logLevel: 'error', trustProxy: false };
+  config = { nodeEnv: 'test', port: 0, mongoUri: 'mongodb://test', adminApiKey: 'test-admin-key', storagePath: path.join(root, 'files'), tempStoragePath: path.join(root, 'tmp'), maxUploadSize: 256, storageQuotaBytes: 4096, minFreeDiskBytes: 1, allowedMimeTypes: new Set(['image/png', 'application/pdf', 'video/mp4', 'application/zip', 'audio/mpeg', 'image/svg+xml', 'application/json']), allowedExtensions: new Set(['png', 'pdf', 'mp4', 'zip', 'mp3', 'svg', 'json']), corsOrigin: 'http://localhost:5173', logLevel: 'error', trustProxy: false };
   await ensureStorage(config); database = new MemoryFiles();
   app = createApp({ config, mongoose: { connection: { readyState: 1 } }, fileModel: database, logger: { info() {}, error() {} } });
 });
 afterEach(async () => fs.rm(root, { recursive: true, force: true }));
 
 async function upload() { return request(app).post('/api/upload').set('x-api-key', config.adminApiKey).attach('file', png, { filename: 'image.png', contentType: 'image/png' }); }
+async function uploadFormat(buffer, filename, contentType) { return request(app).post('/api/upload').set('x-api-key', config.adminApiKey).attach('file', buffer, { filename, contentType }); }
 
 test('liveness and readiness use the real application stack', async () => {
   await request(app).get('/health/live').expect(200, { status: 'ok' });
@@ -57,9 +58,25 @@ test('uploads are content addressed, deduplicated, and delivered through /cdn', 
   await request(app).get(first.body.url).set('if-none-match', get.headers.etag).expect(304);
   await request(app).get(`/api/cdn/${first.body.storedName}`).expect(404);
 });
+test('accepts configured document, archive, media, and SVG formats with safe delivery headers', async () => {
+  const samples = [
+    [png, 'image.png', 'image/png'], [Buffer.from('%PDF-1.7\n'), 'manual.pdf', 'application/pdf'],
+    [Buffer.from([0, 0, 0, 16, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]), 'clip.mp4', 'video/mp4'],
+    [Buffer.from([0x50, 0x4b, 0x03, 0x04]), 'bundle.zip', 'application/zip'], [Buffer.from('ID3test'), 'track.mp3', 'audio/mpeg'],
+    [Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>'), 'logo.svg', 'image/svg+xml'],
+  ];
+  for (const [buffer, filename, mime] of samples) {
+    const uploaded = await uploadFormat(buffer, filename, mime); assert.equal(uploaded.status, 201, filename);
+    const served = await request(app).get(uploaded.body.url).expect(200);
+    assert.equal(served.headers['content-type'], mime);
+    if (['application/zip', 'image/svg+xml'].includes(mime)) assert.match(served.headers['content-disposition'], /^attachment;/);
+    else assert.equal(served.headers['content-disposition'], undefined);
+  }
+});
 test('rejects mismatched type, traversal, and oversized files without retaining temp files', async () => {
   await request(app).post('/api/upload').set('x-api-key', config.adminApiKey).attach('file', png, { filename: 'image.png', contentType: 'image/jpeg' }).expect(415);
-  await request(app).post('/api/upload').set('x-api-key', config.adminApiKey).attach('file', Buffer.alloc(64), { filename: 'image.png', contentType: 'image/png' }).expect(413);
+  await request(app).post('/api/upload').set('x-api-key', config.adminApiKey).attach('file', Buffer.alloc(512), { filename: 'image.png', contentType: 'image/png' }).expect(413);
+  await request(app).post('/api/upload').set('x-api-key', config.adminApiKey).attach('file', Buffer.from('unsupported'), { filename: 'program.exe', contentType: 'application/octet-stream' }).expect(415);
   for (const candidate of ['../x.png', '..%2Fx.png', '%2e%2e%2fx.png', 'C:%5Cx.png', 'a.png%00']) await request(app).get(`/cdn/${candidate}`).expect(404);
   assert.deepEqual(await fs.readdir(config.tempStoragePath), []);
 });

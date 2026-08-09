@@ -65,11 +65,16 @@ services:
     build:
       context: .
       dockerfile: private-admin-gateway/Dockerfile
+      args:
+        VITE_PUBLIC_CDN_BASE_URL: ${PUBLIC_CDN_BASE_URL:-}
     restart: unless-stopped
     ports:
       - "127.0.0.1:3002:8080"
     networks:
       - gateway
+    environment:
+      NGINX_CLIENT_MAX_BODY_SIZE: ${NGINX_CLIENT_MAX_BODY_SIZE:-1g}
+      NGINX_ENVSUBST_FILTER: NGINX_CLIENT_MAX_BODY_SIZE
     depends_on:
       app:
         condition: service_healthy

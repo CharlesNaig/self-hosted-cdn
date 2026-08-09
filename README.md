@@ -12,6 +12,8 @@ A local CDN file manager with a private administrative application and a separat
 
 Uploads require the server-side `x-api-key`, are written to a controlled temporary directory, validated, SHA-256 hashed, and persisted under immutable content-addressed names. The database enforces a unique SHA-256 index.
 
+The CDN supports common image, document, archive, audio, video, and font formats; see [operations documentation](docs/operations.md) for the exact allowlist, large-file limits, and inline-versus-download policy.
+
 ## Setup and verification
 
 Copy `.env.example` to `.env`, populate every value, and follow the exact setup, backup, recovery, and verification instructions in [docs/operations.md](docs/operations.md).

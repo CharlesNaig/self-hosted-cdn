@@ -18,4 +18,11 @@ test('private admin gateway serves the SPA and proxies private application paths
   }
   assert.match(config, /proxy_pass http:\/\/app:3000/);
   assert.match(config, /proxy_set_header X-API-Key \$http_x_api_key/);
+  assert.match(config, /client_max_body_size \$\{NGINX_CLIENT_MAX_BODY_SIZE\}/);
+  assert.match(config, /return 413 '\{"error":"Upload exceeds the configured size limit"\}'/);
+});
+
+test('Compose limits nginx template substitution to the body-size setting', async () => {
+  const compose = await fs.readFile(new URL('../../docker-compose.yml', import.meta.url), 'utf8');
+  assert.match(compose, /NGINX_ENVSUBST_FILTER: NGINX_CLIENT_MAX_BODY_SIZE/);
 });
