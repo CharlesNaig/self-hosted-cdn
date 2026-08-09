@@ -25,3 +25,21 @@ Private-first self-hosted CDN: Express/MongoDB administration, a public read-onl
 - Start/rebuild the Compose stack on the host and verify port 3002 before changing the existing Tailscale Serve target from 3000 to 3002.
 - Do not expose the private-admin gateway through Funnel.
 - Rebuild the stack with the real `.env` and verify the configured large upload limit through the private gateway before changing any networking.
+
+## 2026-08-09 — CDN public root landing page
+
+- Added a root-level static `index.html` for the public CDN domain. It is intentionally
+  limited to a small informational page and has no JavaScript, trackers, external
+  resources, or private infrastructure details.
+- No Vercel rewrite, proxy, DNS, Tailscale, Docker, or application route configuration
+  was changed. The repository has no checked-in Vercel configuration; the existing
+  externally managed CDN rewrite remains responsible for non-filesystem asset paths.
+- Added `tests/cdn-landing.test.mjs` to assert the document is static, accessible, and
+  does not contain prohibited upstream or private-infrastructure references.
+
+### Landing page verification
+
+- `node --test tests/cdn-landing.test.mjs`: 2 passing tests.
+- `server npm test`: 10 passing tests.
+- `client npm test`: 3 passing tests.
+- `client npm run build`: passed.
