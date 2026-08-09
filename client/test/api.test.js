@@ -29,7 +29,7 @@ test('VIEW and COPY use the same public URL without a private CDN path', () => {
   assert.equal(buildPublicCdnUrl(storedName, 'https://cdn.naig.me/'), publicUrl);
   assert.equal(publicUrl.includes('/cdn/'), false);
   assert.equal(publicUrl.includes(':8443'), false);
-  assert.equal(publicUrl.includes('tail360c4e.ts.net'), false);
+  assert.equal(/^https:\/\/cdn\.naig\.me\//.test(publicUrl), true);
 });
 
 test('uses the private same-origin CDN route only as a development fallback', () => {

@@ -17,6 +17,18 @@ storage/
 server/storage/
 server/tmp/
 
+# Backup archives and packaged runtime state
+*.rar
+*.7z
+*.bak
+*.backup
+*.tar.bak
+*.tgz.bak
+
+# Live deployment overlays belong in a private repository
+vercel-proxy/vercel.json
+deployment-private/
+
 # Build outputs
 dist/
 build/

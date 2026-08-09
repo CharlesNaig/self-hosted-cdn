@@ -74,3 +74,15 @@ Private-first self-hosted CDN: Express/MongoDB administration, a public read-onl
 ### Favicon verification
 
 - `node --test tests/cdn-landing.test.mjs`: 2 passing tests.
+
+## 2026-08-10 — Production hardening and public documentation
+
+- Replaced the public repository's live proxy manifest with a non-deployable example.
+- Removed a checked-in backup archive and added repository and Docker build exclusions
+  for archives, local configuration, and deployment-private files.
+- Moved upload and delete throttles behind administrator authentication, constrained
+  multipart parsing, and added public gateway request and connection controls.
+- Added production-facing branding, a safe architecture guide, an MIT license, and a
+  private security-reporting policy without publishing sensitive finding details.
+- Added regression coverage for repository hygiene, proxy examples, upload throttling,
+  multipart rejection, gateway policy, and the public landing page.

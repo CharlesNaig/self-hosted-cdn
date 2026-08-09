@@ -14,8 +14,13 @@
     "file-upload",
     "express"
   ],
-  "author": "",
+  "author": "Charles Naig",
   "license": "MIT",
+  "homepage": "https://github.com/CharlesNaig/self-hosted-cdn#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CharlesNaig/self-hosted-cdn.git"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
@@ -23,7 +28,7 @@
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
     "mongoose": "^8.0.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^2.2.0"
   },
   "devDependencies": {
     "supertest": "^6.3.3"

@@ -19,12 +19,21 @@ export function createUploadRouter({ config, File }) {
       destination: (req, file, cb) => cb(null, config.tempStoragePath),
       filename: (req, file, cb) => cb(null, crypto.randomUUID()),
     }),
-    limits: { fileSize: config.maxUploadSize, files: 1 },
+    limits: {
+      fileSize: config.maxUploadSize,
+      files: 1,
+      fields: 0,
+      // Busboy signals the limit at the boundary, so 2 permits exactly one file part.
+      parts: 2,
+      fieldNameSize: 100,
+      fieldSize: 1024,
+      headerPairs: 100,
+    },
   });
   const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false });
   const auth = createApiKeyAuth(config);
 
-  router.post('/upload', limiter, auth, upload.single('file'), async (req, res, next) => {
+  router.post('/upload', auth, limiter, upload.single('file'), async (req, res, next) => {
     if (!req.file) return res.status(400).json({ error: 'No file provided' });
     const temporaryPath = req.file.path;
     let finalizedPath;
